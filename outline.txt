@@ -1,0 +1,24 @@
+Impossible game
+
+
+What makes the impossible game? 
+
+- Places in which you can fall through the floor
+- Being able to jump on blocks that may be higher
+- Having to jump over blocks
+- simple side scroller
+- blocks that you cannot hit or else you'll die
+- score
+- 1 life
+- end? no end? 
+
+- Can create variations of patterns, and mix and match, could be intersting to figure out? 
+
+- spacebar jump the only input we take from user
+- square stays in a stuck position, meanwhile, map is scrolling creating the illusion of the block moving
+
+
+- What do we correlate the block with right now?
+  - not too sure... but we need to ensure that the floor is not only constanly printing, but also moving
+
+  - need to be able to overwrite the terminal in place with the update? 
