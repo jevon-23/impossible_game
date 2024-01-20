@@ -49,19 +49,28 @@ board *init_board() {
       *(board + i) = (block *)malloc(sizeof(block) * NUM_COLS);
     }
 
-    block sprite_block;
+    sprite sprite_block;
     for (int j = 0; j < NUM_COLS; j++) {
       switch (j) {
           case 1:
               /* Write player 1 to the board */
-              sprite_block = new_block(P1);
+              sprite_block = generate_sprite(P1);
               break;
+          // Test to see the other blocks 
+          // case 5:
+          //     sprite_block = generate_sprite(BLOCK);
+          //     break;
+          // case 10:
+          //     sprite_block = generate_sprite(HOLE);
+          //     break;
+          // case 15:
+          //     sprite_block = generate_sprite(SPIKE);
+          //     break;
           default:
-              sprite_block = new_block(FLOOR);
+              sprite_block = generate_sprite(FLOOR);
               break;
       }
-      sprite floor_sprite = sprite_block.generate_block(sprite_block);
-      board_write_block(new_board, floor_sprite, j);
+      board_write_block(new_board, sprite_block, j);
     }
 
     return new_board;
