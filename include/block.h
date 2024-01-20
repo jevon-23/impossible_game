@@ -10,10 +10,7 @@ typedef struct dimensions {
 typedef struct block {
     char type;
     bool destructive;
-    struct sprite (*generate_block)(struct block);
-    /* TODO: Substitute with dimensions */
-    int width;
-    int height;
+    dimensions dim;
     bool can_land;
 } block;
 
@@ -49,8 +46,9 @@ typedef struct sprite {
 #define BLOCK_WIDTH  1
 
 block new_block(char type);
+dimensions get_dimensions(char type);
 
-dimensions new_dimensions(int width, int height);
+sprite generate_sprite(char block_type);
 
 void print_sprite(sprite s);
 
