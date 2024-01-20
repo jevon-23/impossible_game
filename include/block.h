@@ -21,6 +21,16 @@ typedef struct sprite {
 }sprite;
 
 // Block type definitions 
+
+enum block_types {
+    _SPACE,
+    _FLOOR,
+    _P1,
+    _HOLE,
+    _SPIKE,
+    _BLOCK
+};
+
 #define SPACE '*' // SPACE
 #define SPACE_HEIGHT 1
 #define SPACE_WIDTH  1
@@ -49,6 +59,7 @@ block new_block(char type);
 dimensions get_dimensions(char type);
 
 sprite generate_sprite(char block_type);
+sprite generate_random_sprite(void);
 
 void print_sprite(sprite s);
 

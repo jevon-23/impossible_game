@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/********************/
+/* Header functions */
+/********************/
+char block_type_to_char(enum block_types bt);
+
 /**************************/
 /* Sprite implementation */
 /**************************/
@@ -41,6 +46,7 @@ void draw_spaces_above_block(block **block_tiles, int *row_ptr, int block_height
 }
 
 sprite generate_sprite(char block_type) {
+        
     block **block_tiles = (block **)malloc(sizeof(block *) * NUM_ROWS);
     int row_ptr = 0;
 
@@ -58,6 +64,14 @@ sprite generate_sprite(char block_type) {
     }
 
     return new_sprite(block_type, block_tiles, dim);
+}
+
+sprite generate_random_sprite(void) {
+    int r;
+    do {
+        r = rand() % 6;
+    } while (r == _P1 || r == _SPACE);
+    return generate_sprite(block_type_to_char(r));
 }
 
 /*****************************/
@@ -101,6 +115,26 @@ dimensions get_dimensions(char type) {
 /************************/
 /* Block implementation */
 /************************/
+char block_type_to_char(enum block_types bt) {
+    switch(bt) {
+        case _SPACE:
+            return SPACE;
+        case _FLOOR:
+            return FLOOR;
+        case _P1:
+            return P1;
+        case _HOLE:
+            return HOLE;
+        case _SPIKE:
+            return SPIKE;
+        case _BLOCK:
+            return BLOCK;
+        default:
+            printf("Invalid block type passed in: %d\n", bt);
+            exit(-1);
+    }
+}
+
 block new_block(char type) {
     block b;
     b.type = type;
