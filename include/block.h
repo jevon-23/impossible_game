@@ -23,7 +23,7 @@ typedef struct sprite {
     dimensions block_dim;
 }sprite;
 
-// Identifiers
+// Block type definitions 
 #define SPACE '*' // SPACE
 #define SPACE_HEIGHT 1
 #define SPACE_WIDTH  1
