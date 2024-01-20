@@ -29,30 +29,26 @@ int main(int arg, char *argv[]) {
     printf("initializing gameboard\n");
     board *b = init_board();
     printf("finished initializing gameboard\n\n\n\n");
-    print_board(b, false);
 
     /* Game loop */
     while (!b->game_over) {
-     /* For now, generate a random block */
+        print_board(b, false);
+        sleep(1);
+
+        /* For now, generate a random block */
         /* TODO: handle input, and determine where p1 should be */
         scroll_next_board(b);
         update_board(b);
+    } 
 
-        if (b->game_over) {
-            printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-            printf("\t\t You lost!\n");
-            printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-            printf("Final game state before collision\n\n");
-            print_board(b, false);
-            printf("\n\n");
-            printf("Final game state after collision\n");
-            print_board(b, true);
-        } else {
-            print_board(b, false);
-            sleep(1);
-        }
-    }
-
+    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+    printf("\t\t You lost!\n");
+    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+    printf("Final game state before collision\n\n");
+    print_board(b, false);
+    printf("\n\n");
+    printf("Final game state after collision\n");
+    print_board(b, true);
     // printf("Successful build!\n");
     return 0;
 }
