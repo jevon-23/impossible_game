@@ -25,7 +25,7 @@ sprite new_sprite(char type, block **blocks, dimensions dim) {
   return s;
 }
 
-block **generate_space(block space) {
+sprite generate_space(block space) {
   /* Do we need this? I don't think so */
   // block **space_tiles = (block **)malloc(sizeof(block *) * NUM_ROWS);
 
@@ -35,18 +35,24 @@ block **generate_space(block space) {
   exit(-1);
 }
 
+void draw_spaces_above_block(block **block_tiles, int *row_ptr, int block_height, int block_width) {
+    int num_spaces_above = NUM_ROWS - block_height;
+
+    for (; *row_ptr < num_spaces_above; (*row_ptr)++) {
+        *(block_tiles + *row_ptr) = (block *)malloc(sizeof(block) * SPACE_WIDTH);
+
+        for (int col = 0; col < block_width; col++) {
+            *(*(block_tiles + *row_ptr) + col) = new_block(SPACE);
+        }
+    }
+}
+
 sprite generate_floor(block floor) {
   block **floor_tiles = (block **)malloc(sizeof(block *) * NUM_ROWS);
-  int num_spaces_above = NUM_ROWS - floor.height;
-  int row_ptr;
+  int row_ptr = 0;
 
   /* Draw spaces above the floor */
-  for (row_ptr = 0; row_ptr < num_spaces_above; row_ptr++) {
-    *(floor_tiles + row_ptr) = (block *)malloc(sizeof(block) * FLOOR_WIDTH);
-    for (int col = 0; col < floor.width; col++) {
-      *(*(floor_tiles + row_ptr) + col) = new_block(SPACE);
-    }
-  }
+  draw_spaces_above_block(floor_tiles, &row_ptr, floor.height, floor.width);
 
   /* Draw floor tile */
   for (; row_ptr < NUM_ROWS; row_ptr++) {
@@ -58,6 +64,25 @@ sprite generate_floor(block floor) {
 
   dimensions dim = new_dimensions(floor.width, floor.height);
   return new_sprite(floor.type, floor_tiles, dim);
+}
+
+sprite generate_p1(block p1) {
+    block **p_tiles = (block **)malloc(sizeof(block *) * NUM_ROWS); 
+    int row_ptr = 0;
+
+    /* Draw spaces above the player */
+    draw_spaces_above_block(p_tiles, &row_ptr, p1.height, p1.width);
+
+    /* Draw floor tile */
+    for (; row_ptr < NUM_ROWS; row_ptr++) {
+      *(p_tiles + row_ptr) = (block *)malloc(sizeof(block) * P1_WIDTH);
+      for (int col = 0; col < p1.width; col++) {
+        *(*(p_tiles + row_ptr) + col) = new_block(P1);
+      }
+    }
+
+    dimensions dim = new_dimensions(p1.width, p1.height);
+    return new_sprite(p1.type, p_tiles, dim);
 }
 
 dimensions new_dimensions(int width, int height) {
@@ -72,46 +97,56 @@ block new_block(char type) {
   block b;
   b.type = type;
 
-  /* update destructive types */
   switch (type) {
-  case HOLE:
-  case SPIKE:
-  case BLOCK:
-    b.destructive = true;
-    break;
-  case FLOOR:
-  case P1:
-  case SPACE:
-    b.destructive = false;
-    break;
+    case HOLE:
+        b.height = HOLE_HEIGHT;
+        b.width = HOLE_WIDTH;
+        b.destructive = true;
+        b.can_land = false;
+        /* TODO: generate block */
+        b.generate_block = NULL;
+        break;
+    case SPIKE:
+        b.height = SPIKE_HEIGHT;
+        b.width = SPIKE_WIDTH;
+        b.destructive = true;
+        b.can_land = false;
+        /* TODO: generate spike */
+        b.generate_block = NULL;
+        break;
+    case SPACE:
+        b.height = SPACE_HEIGHT;
+        b.width = SPACE_WIDTH;
+        b.destructive = true;
+        b.can_land = false;
+        b.generate_block = &generate_space;
+        break;
+    case FLOOR:
+        b.height = FLOOR_HEIGHT;
+        b.width = FLOOR_WIDTH;
+        b.destructive = false;
+        b.can_land = true;
+        b.generate_block = &generate_floor;
+        break;
+    case P1:
+        b.height = P1_HEIGHT;
+        b.width = P1_WIDTH;
+        b.destructive = false;
+        b.can_land = true;
+        b.generate_block = &generate_p1;
+        break;
+    case BLOCK:
+        b.height = BLOCK_HEIGHT;
+        b.width = BLOCK_WIDTH;
+        b.destructive = true;
+        b.can_land = true;
+        /* TODO: generate block */
+        b.generate_block = NULL;
+        break;
 
-  default:
-    printf("invalid floor was passed in, type: %c \n", type);
-    exit(-1);
-  }
-
-  /* Update dimensions, and set fn pointer */
-  switch (type) {
-  case HOLE:
-    break;
-  case SPIKE:
-    break;
-  case BLOCK:
-    break;
-  case FLOOR:
-    b.height = FLOOR_HEIGHT;
-    b.width = FLOOR_WIDTH;
-    b.generate_block = &generate_floor;
-    break;
-  case P1:
-    break;
-  case SPACE:
-    b.height = SPACE_HEIGHT;
-    b.width = SPACE_WIDTH;
-    break;
-  default:
-    printf("invalid floor was passed in, type: %c \n", type);
-    exit(-1);
+    default:
+        printf("invalid floor was passed in, type: %c \n", type);
+        exit(-1);
   }
 
   return b;

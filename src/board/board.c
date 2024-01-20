@@ -22,6 +22,7 @@ void place_block(board *gb, block b, int row, int col) {
   *(*(board + row) + col) = b;
 }
 
+/* Blocks are written in a vertical format, so entire columns are written */
 void board_write_block(board *gb, sprite sprite, int col_index) {
   block **blocks = sprite.blocks;
   int start_col = col_index;
@@ -48,9 +49,18 @@ board *init_board() {
     *(board + i) = (block *)malloc(sizeof(block) * NUM_COLS);
   }
 
+  block sprite_block;
   for (int j = 0; j < NUM_COLS; j++) {
-    block floor = new_block(FLOOR);
-    sprite floor_sprite = floor.generate_block(floor);
+    switch (j) {
+        case 1:
+            /* Write player 1 to the board */
+            sprite_block = new_block(P1);
+            break;
+        default:
+            sprite_block = new_block(FLOOR);
+            break;
+    }
+    sprite floor_sprite = sprite_block.generate_block(sprite_block);
     board_write_block(new_board, floor_sprite, j);
   }
 
