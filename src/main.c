@@ -1,5 +1,6 @@
 #include "../include/board.h"
 #include "../include/window.h"
+#include "../include/utils.h"
 #include <time.h>
 #include <float.h>
 #include <stdbool.h>
@@ -7,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <curses.h>
 
 int processCLI(int argc, char **argv, char **filename) {
     if (argc != 2) {
@@ -16,15 +18,11 @@ int processCLI(int argc, char **argv, char **filename) {
     return 0;
 }
 int main(int arg, char *argv[]) {
-    // WINDOW *window = init_window();
-    // getmaxyx(window, max_x, max_y);
-    // printf("\n%d %d\n", max_x, max_y);
-    // sleep(1);
+    /* Initialize ncurses window */
+    WINDOW *window = init_window();
 
-    // Initialize time
+    // Initialize random seed
     srand(time(NULL));
-
-    generate_random_sprite();
 
     printf("initializing gameboard\n");
     board *b = init_board();
@@ -32,23 +30,17 @@ int main(int arg, char *argv[]) {
 
     /* Game loop */
     while (!b->game_over) {
-        print_board(b, false);
+        update_frame(window, b);
         sleep(1);
 
         /* For now, generate a random block */
-        /* TODO: handle input, and determine where p1 should be */
         scroll_next_board(b);
         update_board(b);
     } 
 
-    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("\t\t You lost!\n");
-    printf("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n");
-    printf("Final game state before collision\n\n");
-    print_board(b, false);
-    printf("\n\n");
-    printf("Final game state after collision\n");
-    print_board(b, true);
-    // printf("Successful build!\n");
+    /* TODO: Update to use ncurses window instead */
+    print_gameover(b);
+
+    endwin();
     return 0;
 }

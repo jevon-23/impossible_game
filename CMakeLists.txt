@@ -13,6 +13,7 @@ set(SOURCES
     src/block/block.c
     src/board/board.c
     src/window/window.c
+    src/utils/utils.c
 )
 
 # compile options
@@ -59,12 +60,5 @@ target_link_libraries(
 )
 
 gtest_discover_tests(block_tests)
-
-
-
-
-
-
-
 
 
