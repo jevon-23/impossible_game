@@ -8,10 +8,6 @@
 
 block **init_next_board(block **board);
 
-void breakpoint() {
-
-}
-
 void place_block(board *gb, bool next_board,  block b, int row, int col) {
     block **board;
     if (next_board)
@@ -58,6 +54,27 @@ void print_board(board *b, bool next_board) {
       }
       printf("\n");
     }
+}
+
+char *str_board(board *b, bool next_board) {
+    int  block_index = 0;
+    char *board_str = (char *)malloc(sizeof(char) * BOARD_STR_LEN);
+
+    block **game_board;
+    if (next_board)
+        game_board = b->next_board;
+    else
+        game_board = b->board;
+
+    for (int i = 0; i < NUM_ROWS; i++) {
+        for (int j = 0; j < NUM_COLS; j++) {
+            board_str[block_index++] = get_block(game_board,i, j).type;
+        }
+        board_str[block_index++] = '\n';
+    }
+
+    board_str[block_index] = '\0';
+    return board_str;
 }
 
 /* Returns back the row that P1 is in. */

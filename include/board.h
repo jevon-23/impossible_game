@@ -6,6 +6,9 @@
 #define NUM_ROWS 4
 #define NUM_COLS 10
 
+// Board str_len = (# of \n) + ((# of rows) * (# of cols) + '\0')
+#define BOARD_STR_LEN (NUM_ROWS + (NUM_ROWS * NUM_COLS) + 1)
+
 #define P1_POS_ROW NUM_ROWS-1
 #define P1_POS_COL 1
 
@@ -35,5 +38,5 @@ board *init_board();
 void update_board(board *b);
 void print_board(board *b, bool next_board);
 void scroll_next_board(board *b);
-
+char *str_board(board *b, bool next_board);
 #endif
