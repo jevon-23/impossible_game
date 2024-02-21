@@ -8,8 +8,10 @@
 WINDOW *init_window() {
   printf("initializing ncurses window\n");
   WINDOW *w = initscr();
-  timeout(-1);
+  /* User input doesn't get echoed back out */
   noecho();
+  /* Non-blocking mode */
+  nodelay(stdscr, TRUE);
   printf("finished initializing ncurses window\n");
   return w;
 }
