@@ -14,6 +14,7 @@ set(SOURCES
     src/board/board.c
     src/window/window.c
     src/utils/utils.c
+    src/interrupts/interrupts.c
 )
 
 # compile options
@@ -30,8 +31,22 @@ target_include_directories(impossible_game
         /usr/local/opt/ncurses/include
 )
 
+# Link ncurses
 link_directories(/usr/local/opt/ncurses/lib)
-target_link_libraries(impossible_game ncurses)
+
+# Link pthreads
+set(CMAKE_THREAD_LIBS_INIT "-lpthread")
+set(CMAKE_HAVE_THREADS_LIBRARY 1)
+set(CMAKE_USE_WIN32_THREADS_INIT 0)
+set(CMAKE_USE_PTHREADS_INIT 1)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+target_link_libraries(impossible_game 
+    PRIVATE
+        ncurses
+        ${CMAKE_THREAD_LIBS_INIT}
+
+)
 
 # GoogleTest requires at least C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -60,5 +75,3 @@ target_link_libraries(
 )
 
 gtest_discover_tests(block_tests)
-
-
