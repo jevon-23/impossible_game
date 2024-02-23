@@ -161,18 +161,27 @@ void scroll_next_board(board *b, int_args *key_board_listener_args) {
 
         /* Start jump */
         if (key_press == JUMP_KEY) {
-            printf("Jump key it is!\n");
             b->p1_state.is_jumping = true;
             b->p1_state.jump_state = UP1;
+            write_key_press_flag(key_board_listener_args, NOTHING_KEY_FLAG);
         }
 
     } else {
         b->p1_state.jump_state += 1;
 
         if (b->p1_state.jump_state == LANDED) {
-            b->p1_state.is_jumping = false;
-            write_key_press_flag(key_board_listener_args, NOTHING_KEY_FLAG);
-        }
+
+            if (key_press == JUMP_KEY) {
+                b->p1_state.is_jumping = true;
+                b->p1_state.jump_state = UP1;
+            } else { 
+                b->p1_state.is_jumping = false;
+                b->p1_state.jump_state = NO_JUMP;
+            }
+        }     
+
+        /* Reset the key to be nothing if we're already jumping, makes jump more timing based */
+        write_key_press_flag(key_board_listener_args, NOTHING_KEY_FLAG);
     }
 
     coords p1_coords = find_p1(b, b->next_board, false);
@@ -193,6 +202,7 @@ void scroll_next_board(board *b, int_args *key_board_listener_args) {
 
     /* Input a random block into the gameboard */
     sprite next_sprite = generate_random_sprite();
+    // sprite next_sprite = generate_sprite(FLOOR);
     board_write_sprite(b, false, next_sprite, NUM_COLS-1);
 
     printf("finished scrolling next gameboard\n");
