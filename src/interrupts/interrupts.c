@@ -12,14 +12,14 @@
 /********************************/
 void write_key_press_flag(int_args *arguments, enum KEY_FLAGS key_press) {
     pthread_mutex_lock(arguments->key_press_flag_lock);
-    *arguments->key_press_flag = key_press;
+    *(arguments->key_press_flag) = key_press;
     pthread_mutex_unlock(arguments->key_press_flag_lock);
 }
 
-enum KEY_FLAGS read_flag(int_args *arguments) {
+enum KEY_FLAGS read_key_press_flag(int_args *arguments) {
     enum KEY_FLAGS out;
     pthread_mutex_lock(arguments->key_press_flag_lock);
-    out = *arguments->key_press_flag;
+    out = *(arguments->key_press_flag);
     pthread_mutex_unlock(arguments->key_press_flag_lock);
     return out;
 }
@@ -47,17 +47,16 @@ enum KEY_FLAGS process_user_input(char inp) {
         case 'q': // quit
             return QUIT_KEY_FLAG;
         case ' ': // spaceabar
+            printf("return space bar key flag\n");
             return SPACE_BAR_KEY_FLAG;
         case 'p': // pause
             return PAUSE_KEY_FLAG;
         default:
-            return ERR_KEY_FLAG;
+            return NOTHING_KEY_FLAG;
     }
 }
 
 void handle_user_input(int_args *arguments, enum KEY_FLAGS key_press) {
-    write_key_press_flag(arguments, key_press);
-
     switch (key_press) {
         case QUIT_KEY_FLAG:
             write_game_over_flag(arguments, true);
@@ -65,15 +64,16 @@ void handle_user_input(int_args *arguments, enum KEY_FLAGS key_press) {
         case SPACE_BAR_KEY_FLAG:
             /* Jump (if we aren't jumping already)! */
             printf("We hit the space bar!\n");
+            write_key_press_flag(arguments, SPACE_BAR_KEY_FLAG);
             break;
         case PAUSE_KEY_FLAG:
             /* Pause the game */
             break;
         default:
-            // printf("Key case is not handled\n");
-            break;
+            // Default returns early from function, and doesn't execute write
+            return;
     }
-
+    write_key_press_flag(arguments, key_press);
 }
 
 /* Kill the thread, free all malloced mem */
@@ -121,7 +121,7 @@ int_args *init_keyboard_listener(uint32_t *key_press_flag, bool *game_over) {
     int_args *out = (int_args *)malloc(sizeof(int_args));
 
     out->key_press_flag = (enum KEY_FLAGS *)malloc(sizeof(enum KEY_FLAGS));
-    *(out->key_press_flag) = ERR_KEY_FLAG;
+    *(out->key_press_flag) = NOTHING_KEY_FLAG;
     out->key_press_flag_lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
     if (pthread_mutex_init(out->key_press_flag_lock, NULL) != 0) {
         printf("Failed to create mutex for key flag\n");

@@ -1,10 +1,13 @@
+#include "../../include/utils.h"
 #include "../../include/board.h"
 #include "../../include/block.h"
+#include "../../include/interrupts.h"
 #include <float.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ncurses.h>
 
 block **init_next_board(block **board);
 
@@ -91,6 +94,8 @@ coords find_p1(board *b, bool next_board, bool b4_scroll) {
     else
         board = b->board;
 
+
+    out.row = P1_POS_ROW;
     for (int i = 0; i < NUM_ROWS; i++) {
         if (get_block(board, i, out.col).type == P1) {
             out.row = i;
@@ -111,13 +116,35 @@ bool check_collision(board *b, bool next_board, bool b4_scroll) {
         if (get_block(b->next_board, p1_coords.row, p1_coords.col+1).destructive) {
             return true;
         }
+        return false;
     }
+    
     return false;
 }
 
+void update_p1_pos_row_while_jumping(board *b) {
+    if (!b->p1_state.is_jumping) 
+        return;
+
+    switch (b->p1_state.jump_state) {
+        case UP1:
+        case UP2:
+            P1_POS_ROW -= 1;
+            break;
+        case DOWN1:
+        case DOWN2:
+            P1_POS_ROW += 1;
+            break;
+        case NO_JUMP:
+        case LANDED:
+            break;
+        default:
+            printf("Jumping state has not been handled yet\n");
+    }
+}
 
 
-void scroll_next_board(board *b) {
+void scroll_next_board(board *b, int_args *key_board_listener_args) {
     printf("scroll next gameboard \n");
 
     block **next_board = b->next_board;
@@ -128,11 +155,41 @@ void scroll_next_board(board *b) {
         }
     }
 
+    enum KEY_FLAGS key_press = read_key_press_flag(key_board_listener_args);
+    if (!b->p1_state.is_jumping) {
+        b->p1_state.jump_state = NO_JUMP;
+
+        /* Start jump */
+        if (key_press == JUMP_KEY) {
+            printf("Jump key it is!\n");
+            b->p1_state.is_jumping = true;
+            b->p1_state.jump_state = UP1;
+        }
+
+    } else {
+        b->p1_state.jump_state += 1;
+
+        if (b->p1_state.jump_state == LANDED) {
+            b->p1_state.is_jumping = false;
+            write_key_press_flag(key_board_listener_args, NOTHING_KEY_FLAG);
+        }
+    }
+
+    coords p1_coords = find_p1(b, b->next_board, false);
+    update_p1_pos_row_while_jumping(b);
+
     b->game_over = check_collision(b, true, true);
 
     /* Place P1 back in pos 0, creating the scroll effect */
-    place_block(b, true, get_block(next_board, P1_POS_ROW, P1_POS_COL-1), P1_POS_ROW, P1_POS_COL);
-    place_block(b, true, new_block(FLOOR), P1_POS_ROW, P1_POS_COL-1);
+
+    if (!b->p1_state.is_jumping) {
+        place_block(b, true, get_block(next_board, p1_coords.row, p1_coords.col-1), P1_POS_ROW, P1_POS_COL);
+        place_block(b, true, new_block(FLOOR), P1_POS_ROW, P1_POS_COL-1);
+    } else {
+        place_block(b, true, get_block(next_board, p1_coords.row, p1_coords.col-1), P1_POS_ROW, P1_POS_COL);
+        place_block(b, true, new_block(FLOOR), p1_coords.row, p1_coords.col-1);
+
+    }
 
     /* Input a random block into the gameboard */
     sprite next_sprite = generate_random_sprite();
