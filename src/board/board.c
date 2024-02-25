@@ -1,17 +1,17 @@
-#include "../../include/utils.h"
 #include "../../include/board.h"
 #include "../../include/block.h"
 #include "../../include/interrupts.h"
+#include "../../include/utils.h"
 #include <float.h>
+#include <ncurses.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ncurses.h>
 
 block **init_next_board(block **board);
 
-void place_block(board *gb, bool next_board,  block b, int row, int col) {
+void place_block(board *gb, bool next_board, block b, int row, int col) {
     block **board;
     if (next_board)
         board = gb->next_board;
@@ -30,17 +30,15 @@ void board_write_sprite(board *gb, bool init, sprite sprite, int col_index) {
     int start_col = col_index;
 
     for (int block_ptr = 0; col_index < start_col + sprite.block_dim.width;
-         col_index++, block_ptr++) {
-      for (int row = 0; row < NUM_ROWS; row++) {
-
-        block src_block = *(*(blocks + row) + block_ptr);
-        if (init)
-            place_block(gb, false, src_block, row, col_index);
-        else
-            place_block(gb, true, src_block, row, col_index);
-      }
+        col_index++, block_ptr++) {
+        for (int row = 0; row < NUM_ROWS; row++) {
+            block src_block = *(*(blocks + row) + block_ptr);
+            if (init)
+                place_block(gb, false, src_block, row, col_index);
+            else
+                place_block(gb, true, src_block, row, col_index);
+        }
     }
-
     return;
 }
 
@@ -52,15 +50,15 @@ void print_board(board *b, bool next_board) {
         game_board = b->board;
 
     for (int i = 0; i < NUM_ROWS; i++) {
-      for (int j = 0; j < NUM_COLS; j++) {
-        printf("%c", (*(*(game_board + i) + j)).type);
-      }
-      printf("\n");
+        for (int j = 0; j < NUM_COLS; j++) {
+            printf("%c", (*(*(game_board + i) + j)).type);
+        }
+        printf("\n");
     }
 }
 
 char *str_board(board *b, bool next_board) {
-    int  block_index = 0;
+    int block_index = 0;
     char *board_str = (char *)malloc(sizeof(char) * BOARD_STR_LEN);
 
     block **game_board;
@@ -71,7 +69,7 @@ char *str_board(board *b, bool next_board) {
 
     for (int i = 0; i < NUM_ROWS; i++) {
         for (int j = 0; j < NUM_COLS; j++) {
-            board_str[block_index++] = get_block(game_board,i, j).type;
+            board_str[block_index++] = get_block(game_board, i, j).type;
         }
         board_str[block_index++] = '\n';
     }
@@ -94,7 +92,6 @@ coords find_p1(board *b, bool next_board, bool b4_scroll) {
     else
         board = b->board;
 
-
     out.row = P1_POS_ROW;
     for (int i = 0; i < NUM_ROWS; i++) {
         if (get_block(board, i, out.col).type == P1) {
@@ -102,28 +99,86 @@ coords find_p1(board *b, bool next_board, bool b4_scroll) {
             break;
         }
     }
-
     return out;
 }
 
+bool check_jump_collision(board *b, bool next_board, bool b4_scroll) {
+    block **game_board;
+    if (next_board)
+        game_board = b->next_board;
+    else
+        game_board = b->board;
+
+    /********************************************************************************
+     *   Note: This function is called after we update P1_POS_COL & P1_POS_ROW,
+     *         but before we actually update the position of the player sprite
+     *         on the board. So there should be a block other than the P1 block
+     *         in the position of (P1_POS_COL, P1_POS_ROW).
+     *
+     *   Collision rules are based on jump state
+     *   CASE NO JUMP:
+     *      We shouldn't be in here, hit panic
+     *   CASE UPn:
+     *      If there is anything that is in the path of the jump, we are colliding
+     *   CASE DOWNn:
+     *      If there is anything below us that we cannot land on, we are colliding
+     *      If there is anything below us that is destructive, we are colliding
+     *   CASE LANDED:
+     *      We should hit panic. As of right now, as soon as we hit the landed
+     *      state, we automatically update to either UP1 or NO_JUMP
+     ********************************************************************************/
+
+    block next_block = get_block(game_board, P1_POS_ROW, P1_POS_COL);
+    switch (b->p1_state.jump_state) {
+    case UP1:
+    case UP2:
+        if (next_block.destructive) {
+            return true;
+        }
+        break;
+    case DOWN1:
+    case DOWN2:
+        if (next_block.destructive && !next_block.can_land) {
+          return true;
+        }
+        if (next_block.can_land && next_block.type != FLOOR) {
+          P1_POS_ROW--;
+        }
+        break;
+
+    case LANDED:
+    default:
+        printf("This jump state is not being handled for jump state: %d\n",
+               b->p1_state.jump_state);
+        addstr("hit da default\n");
+    }
+    return false;
+}
 
 bool check_collision(board *b, bool next_board, bool b4_scroll) {
+    block **game_board;
+    if (next_board)
+        game_board = b->next_board;
+    else
+        game_board = b->board;
+
     if (!b->p1_state.is_jumping) {
-        /* We are slidinig on the ground, handle collisions that are directly in front of us */
+        /* We are slidinig on the ground, handle collisions that are directly in
+         * front of us */
         coords p1_coords = find_p1(b, next_board, b4_scroll);
 
-        /* Check the block directly in front of us to see if we are going to collide w/ a  destructive block*/
-        if (get_block(b->next_board, p1_coords.row, p1_coords.col+1).destructive) {
+        /* Check the block directly in front of us to see if we are going to collide
+         * w/ a  destructive block*/
+        if (get_block(game_board, p1_coords.row, p1_coords.col + 1).destructive) {
             return true;
         }
         return false;
     }
-    
-    return false;
+    return check_jump_collision(b, next_board, b4_scroll);
 }
 
 void update_p1_pos_row_while_jumping(board *b) {
-    if (!b->p1_state.is_jumping) 
+    if (!b->p1_state.is_jumping)
         return;
 
     switch (b->p1_state.jump_state) {
@@ -143,6 +198,17 @@ void update_p1_pos_row_while_jumping(board *b) {
     }
 }
 
+void update_p1_pos_row_for_falling(board *b) {
+    if (P1_POS_ROW == P1_DEFAULT_POS_ROW) {
+        return;
+    }
+    block block_underneath_p1 =
+        get_block(b->next_board, P1_POS_ROW + 1, P1_POS_COL);
+
+    if (block_underneath_p1.type == SPACE || block_underneath_p1.type == FLOOR) {
+        P1_POS_ROW++;
+    }
+}
 
 void scroll_next_board(board *b, int_args *key_board_listener_args) {
     printf("scroll next gameboard \n");
@@ -150,8 +216,8 @@ void scroll_next_board(board *b, int_args *key_board_listener_args) {
     block **next_board = b->next_board;
     /* Shift everything over one frame, last col should be untouched */
     for (int i = 0; i < NUM_ROWS; i++) {
-        for (int j = 0; j < NUM_COLS-1; j++) {
-            place_block(b, true, get_block(next_board, i, j+1), i, j);
+        for (int j = 0; j < NUM_COLS - 1; j++) {
+            place_block(b, true, get_block(next_board, i, j + 1), i, j);
         }
     }
 
@@ -174,36 +240,50 @@ void scroll_next_board(board *b, int_args *key_board_listener_args) {
             if (key_press == JUMP_KEY) {
                 b->p1_state.is_jumping = true;
                 b->p1_state.jump_state = UP1;
-            } else { 
+            } else {
                 b->p1_state.is_jumping = false;
                 b->p1_state.jump_state = NO_JUMP;
             }
-        }     
+        }
 
-        /* Reset the key to be nothing if we're already jumping, makes jump more timing based */
+        /* Reset the key to be nothing if we're already jumping, makes jump more
+         * timing based */
         write_key_press_flag(key_board_listener_args, NOTHING_KEY_FLAG);
     }
 
     coords p1_coords = find_p1(b, b->next_board, false);
     update_p1_pos_row_while_jumping(b);
 
+    if (b->p1_state.jump_state == NO_JUMP)
+        update_p1_pos_row_for_falling(b);
     b->game_over = check_collision(b, true, true);
 
     /* Place P1 back in pos 0, creating the scroll effect */
-
     if (!b->p1_state.is_jumping) {
-        place_block(b, true, get_block(next_board, p1_coords.row, p1_coords.col-1), P1_POS_ROW, P1_POS_COL);
-        place_block(b, true, new_block(FLOOR), P1_POS_ROW, P1_POS_COL-1);
+        place_block(b, true,
+                    get_block(next_board, p1_coords.row, p1_coords.col - 1),
+                    P1_POS_ROW, P1_POS_COL);
+        place_block(b, true, new_block(FLOOR), P1_POS_ROW, P1_POS_COL - 1);
     } else {
-        place_block(b, true, get_block(next_board, p1_coords.row, p1_coords.col-1), P1_POS_ROW, P1_POS_COL);
-        place_block(b, true, new_block(FLOOR), p1_coords.row, p1_coords.col-1);
-
+        place_block(b, true,
+                    get_block(next_board, p1_coords.row, p1_coords.col - 1),
+                    P1_POS_ROW, P1_POS_COL);
+        place_block(b, true, new_block(FLOOR), p1_coords.row, p1_coords.col - 1);
     }
 
     /* Input a random block into the gameboard */
-    sprite next_sprite = generate_random_sprite();
-    // sprite next_sprite = generate_sprite(FLOOR);
-    board_write_sprite(b, false, next_sprite, NUM_COLS-1);
+    // sprite next_sprite = generate_random_sprite();
+
+    if (counter % 5 == 0)
+        flip = ~flip;
+
+    sprite next_sprite;
+    if (flip)
+        next_sprite = generate_sprite(SPIKE);
+    else
+        next_sprite = generate_sprite(FLOOR);
+    counter++;
+    board_write_sprite(b, false, next_sprite, NUM_COLS - 1);
 
     printf("finished scrolling next gameboard\n");
 }
@@ -254,26 +334,26 @@ board *init_board() {
     printf("writing out initial sprites to gameboard\n");
     sprite sprite_block;
     for (int j = 0; j < NUM_COLS; j++) {
-      switch (j) {
-          case 1:
-              /* Write player 1 to the board */
-              sprite_block = generate_sprite(P1);
-              break;
-          // Test to see the other blocks 
-          // case 5:
-          //     sprite_block = generate_sprite(BLOCK);
-          //     break;
-          // case 10:
-          //     sprite_block = generate_sprite(HOLE);
-          //     break;
-          // case 15:
-          //     sprite_block = generate_sprite(SPIKE);
-          //     break;
-          default:
+        switch (j) {
+            case 1:
+                /* Write player 1 to the board */
+                sprite_block = generate_sprite(P1);
+                break;
+            // Test to see the other blocks
+            // case 5:
+            //     sprite_block = generate_sprite(BLOCK);
+            //     break;
+            // case 10:
+            //     sprite_block = generate_sprite(HOLE);
+            //     break;
+            // case 15:
+            //     sprite_block = generate_sprite(SPIKE);
+            //     break;
+            default:
               sprite_block = generate_sprite(FLOOR);
               break;
-      }
-      board_write_sprite(new_board, true, sprite_block, j);
+            }
+        board_write_sprite(new_board, true, sprite_block, j);
     }
 
     printf("finished wirting out initial sprites to gameboard\n");

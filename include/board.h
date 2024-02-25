@@ -11,8 +11,11 @@
 #define BOARD_STR_LEN (NUM_ROWS + (NUM_ROWS * NUM_COLS) + 1)
 
 #define P1_POS_COL 1
-#define P1_DEFAULT_POS_ROW = NUM_ROWS-1
+#define P1_DEFAULT_POS_ROW NUM_ROWS-1
 static int P1_POS_ROW = NUM_ROWS-1;
+
+static uint32_t counter = 0;
+static uint32_t flip = 0;
 
 /* interrupts.h -> if user his space bar we jump */
 #define JUMP_KEY SPACE_BAR_KEY_FLAG
