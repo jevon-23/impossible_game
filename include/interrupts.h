@@ -9,7 +9,7 @@ enum KEY_FLAGS {
     QUIT_KEY_FLAG,
     SPACE_BAR_KEY_FLAG,
     PAUSE_KEY_FLAG,
-    ERR_KEY_FLAG,
+    NOTHING_KEY_FLAG,
 };
 
 typedef struct int_args {
@@ -29,5 +29,7 @@ void close_listener(int_args *arguments);
 
 void write_game_over_flag(int_args *arguments, bool game_over);
 bool read_game_over_flag(int_args *arguments);
+enum KEY_FLAGS read_key_press_flag(int_args *arguments);
+void write_key_press_flag(int_args *arguments, enum KEY_FLAGS key_press);
 
 #endif

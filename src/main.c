@@ -37,7 +37,7 @@ int main(int arg, char *argv[]) {
     while (!read_game_over_flag(keyboard_interrupt_vector)) {
 
         /* For now, generate a random block */
-        scroll_next_board(b);
+        scroll_next_board(b, keyboard_interrupt_vector);
         update_board(b);
         write_game_over_flag(keyboard_interrupt_vector, b->game_over);
         update_frame(window, b);
