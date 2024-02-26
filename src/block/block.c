@@ -151,7 +151,7 @@ block new_block(char type) {
             break;
         case SPACE:
             b.destructive = false;
-            b.can_land = false;
+            b.can_land = true;
             break;
         case FLOOR:
             b.destructive = false;

@@ -129,6 +129,7 @@ bool check_jump_collision(board *b, bool next_board, bool b4_scroll) {
      ********************************************************************************/
 
     block next_block = get_block(game_board, P1_POS_ROW, P1_POS_COL);
+    block replace_block = get_block(game_board, P1_POS_ROW, P1_POS_COL-1);
     switch (b->p1_state.jump_state) {
     case UP1:
     case UP2:
@@ -138,11 +139,12 @@ bool check_jump_collision(board *b, bool next_board, bool b4_scroll) {
         break;
     case DOWN1:
     case DOWN2:
-        if (next_block.destructive && !next_block.can_land) {
-          return true;
-        }
-        if (next_block.can_land && next_block.type != FLOOR) {
+        if (replace_block.can_land && replace_block.type != FLOOR) {
           P1_POS_ROW--;
+          break;
+        }
+        if (next_block.destructive || (!next_block.can_land && next_block.type != SPACE)) {
+          return true;
         }
         break;
 
@@ -198,14 +200,27 @@ void update_p1_pos_row_while_jumping(board *b) {
     }
 }
 
-void update_p1_pos_row_for_falling(board *b) {
+void update_p1_pos_row_for_falling(board *b, int_args *key_board_listener_args) {
     if (P1_POS_ROW == P1_DEFAULT_POS_ROW) {
+        /* Start jump */
+        enum KEY_FLAGS key_press = read_key_press_flag(key_board_listener_args);
+        if (key_press == JUMP_KEY) {
+            b->p1_state.is_jumping = true;
+            b->p1_state.jump_state = UP1;
+            update_p1_pos_row_while_jumping(b);
+            write_key_press_flag(key_board_listener_args, NOTHING_KEY_FLAG);
+            return;
+        }
         return;
     }
+    block prev_block =
+        get_block(b->next_board, P1_POS_ROW,  P1_POS_COL-1);
     block block_underneath_p1 =
         get_block(b->next_board, P1_POS_ROW + 1, P1_POS_COL);
 
-    if (block_underneath_p1.type == SPACE || block_underneath_p1.type == FLOOR) {
+    if ((block_underneath_p1.type == SPACE || block_underneath_p1.type == FLOOR)
+            ) {
+
         P1_POS_ROW++;
     }
 }
@@ -214,6 +229,9 @@ void scroll_next_board(board *b, int_args *key_board_listener_args) {
     printf("scroll next gameboard \n");
 
     block **next_board = b->next_board;
+
+    /* Place P1 back in pos 0, creating the scroll effect */
+    block replace_block = get_block(b->board, P1_POS_ROW, P1_POS_COL+1);
     /* Shift everything over one frame, last col should be untouched */
     for (int i = 0; i < NUM_ROWS; i++) {
         for (int j = 0; j < NUM_COLS - 1; j++) {
@@ -254,21 +272,20 @@ void scroll_next_board(board *b, int_args *key_board_listener_args) {
     coords p1_coords = find_p1(b, b->next_board, false);
     update_p1_pos_row_while_jumping(b);
 
-    if (b->p1_state.jump_state == NO_JUMP)
-        update_p1_pos_row_for_falling(b);
     b->game_over = check_collision(b, true, true);
+    if (b->p1_state.jump_state == NO_JUMP || b->p1_state.jump_state == DOWN1 || b->p1_state.jump_state == DOWN2 || b->p1_state.jump_state == LANDED)
+        update_p1_pos_row_for_falling(b, key_board_listener_args);
 
-    /* Place P1 back in pos 0, creating the scroll effect */
     if (!b->p1_state.is_jumping) {
         place_block(b, true,
                     get_block(next_board, p1_coords.row, p1_coords.col - 1),
                     P1_POS_ROW, P1_POS_COL);
-        place_block(b, true, new_block(FLOOR), P1_POS_ROW, P1_POS_COL - 1);
+        place_block(b, true, replace_block, P1_POS_ROW, P1_POS_COL - 1);
     } else {
         place_block(b, true,
                     get_block(next_board, p1_coords.row, p1_coords.col - 1),
                     P1_POS_ROW, P1_POS_COL);
-        place_block(b, true, new_block(FLOOR), p1_coords.row, p1_coords.col - 1);
+        place_block(b, true, replace_block, p1_coords.row, p1_coords.col - 1);
     }
 
     /* Input a random block into the gameboard */
@@ -278,8 +295,9 @@ void scroll_next_board(board *b, int_args *key_board_listener_args) {
         flip = ~flip;
 
     sprite next_sprite;
-    if (flip)
-        next_sprite = generate_sprite(SPIKE);
+    if (counter % 5 == 0)
+        next_sprite = generate_sprite(BLOCK);
+        // next_sprite = generate_sprite(SPIKE);
     else
         next_sprite = generate_sprite(FLOOR);
     counter++;
